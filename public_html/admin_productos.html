@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Administrar Productos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="p-4">
+<h1 class="mb-4">Administración de Productos</h1>
+
+<form id="form-producto" class="mb-4" enctype="multipart/form-data">
+  <input type="hidden" id="id">
+  <div class="row g-2">
+    <div class="col"><input class="form-control" id="nombre" placeholder="Nombre"></div>
+    <div class="col"><input class="form-control" id="descripcion" placeholder="Descripción"></div>
+    <div class="col"><input class="form-control" id="precio" type="number" placeholder="Precio"></div>
+    <div class="col"><input class="form-control" id="stock" type="number" placeholder="Stock"></div>
+    <div class="col"><input class="form-control" id="categoria" placeholder="Categoría"></div>
+    <div class="col"><input class="form-control" id="file" type="file"></div>
+    <div class="col"><button class="btn btn-primary w-100">Guardar</button></div>
+  </div>
+</form>
+
+<table class="table table-striped">
+<thead>
+<tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Imagen</th><th>Acciones</th></tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+
+<script>
+const API="http://localhost:3000";
+
+async function cargar(){
+  const res=await fetch(API+"/productos");
+  const data=await res.json();
+  const tb=document.getElementById("tbody");
+  tb.innerHTML="";
+  data.forEach(p=>{
+    tb.innerHTML+=`
+      <tr>
+        <td>${p.id}</td>
+        <td>${p.nombre}</td>
+        <td>${p.precio}</td>
+        <td><img src="${p.imagen}" width="60"></td>
+        <td>
+          <button class="btn btn-warning btn-sm" onclick="editar(${p.id})">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminar(${p.id})">Eliminar</button>
+        </td>
+      </tr>`;
+  });
+}
+
+async function eliminar(id){
+  await fetch(API+"/producto/"+id,{method:"DELETE"});
+  cargar();
+}
+
+async function editar(id){
+  const res=await fetch(API+"/producto/"+id);
+  const p=await res.json();
+  document.getElementById("id").value=p.id;
+  nombre.value=p.nombre;
+  descripcion.value=p.descripcion;
+  precio.value=p.precio;
+  stock.value=p.stock;
+  categoria.value=p.categoria;
+}
+
+document.getElementById("form-producto").addEventListener("submit",async e=>{
+  e.preventDefault();
+  let imagenURL="";
+
+  const file=document.getElementById("file").files[0];
+  if(file){
+    const fd=new FormData();
+    fd.append("imagen",file);
+    const up=await fetch(API+"/upload",{method:"POST",body:fd});
+    const js=await up.json();
+    imagenURL="/uploads/"+js.filename;
+  }
+
+  const body={
+    nombre: nombre.value,
+    descripcion: descripcion.value,
+    precio: precio.value,
+    stock: stock.value,
+    categoria: categoria.value
+  };
+  if(imagenURL) body.imagen=imagenURL;
+
+  const id=document.getElementById("id").value;
+
+  if(id){
+    await fetch(API+"/producto/"+id,{
+      method:"PUT",
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+  }else{
+    body.imagen = imagenURL || "";
+    await fetch(API+"/productos",{
+      method:"POST",
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+  }
+
+  e.target.reset();
+  document.getElementById("id").value="";
+  cargar();
+});
+
+cargar();
+</script>
+</body>
+</html>
