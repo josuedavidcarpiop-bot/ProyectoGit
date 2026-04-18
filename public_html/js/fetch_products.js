@@ -1,5 +1,5 @@
 // fetch_products.js - carga productos desde backend y pinta las tarjetas
-const API = "http://localhost:3000";
+const API = "http://localhost:3000/api";
 
 async function loadCatalog() {
   try {
@@ -13,9 +13,7 @@ async function loadCatalog() {
 
     productos.forEach(p => {
 
-  const img = p.imagen
-    ? `/uploads/${p.imagen}`
-    : 'img/default.png';
+  const img = p.imagen_url || 'img/default.png';
 
   const col = document.createElement('div');
   col.className = 'col-12 col-sm-6 col-md-4 col-lg-3 catalog-card-enter';
